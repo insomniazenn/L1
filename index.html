@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NiceDayZc</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://unpkg.com">
+    <link id="google-fonts" href="https://fonts.googleapis.com/css2?family=Kanit:wght@200;300;400;500&display=swap" rel="stylesheet">
+    <style>
+:root {
+    --primary-color: #ff4169;
+    --secondary-color: #ff8e53;
+    --accent-color: #5ce1e6;
+    --light-text: #ffffff;
+    --overlay-bg: #0a0a0a;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body { 
+    margin: 0; 
+    overflow: hidden; 
+    font-family: 'Kanit', sans-serif;
+    color: var(--light-text);
+    height: 100vh;
+    width: 100vw;
+    background: var(--overlay-bg);
+}
+
+canvas { 
+    width: 100%; 
+    height: 100%; 
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 1s ease;
+    pointer-events: auto;
+}
+
+canvas.visible {
+    opacity: 1;
+}
+
+#loading-screen {
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    background: var(--overlay-bg);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: var(--light-text);
+    z-index: 2000;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+}
+
+#loading-screen.hidden {
+    opacity: 0;
+    display: none;
+    visibility: hidden;
+}
+
+#loading-screen h1 {
+    font-weight: 400;
+    font-size: 36px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--light-text);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid var(--light-text);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#loading-status {
+    font-size: 16px;
+    font-weight: 300;
+    margin: 10px 0;
+    min-height: 20px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.7);
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards 0.5s;
+}
+
+#loading-files {
+    width: 300px;
+    margin: 20px 0;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.loading-file {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.loading-file span {
+    color: var(--primary-color);
+}
+
+.loading-file.loading::after {
+    content: '...';
+    animation: dots 1.5s steps(3, end) infinite;
+}
+
+@keyframes dots {
+    0% { content: '.'; }
+    33% { content: '..'; }
+    66% { content: '...'; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#loading-bar {
+    width: 300px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 20px;
+}
+
+#loading-progress {
+    width: 0%;
+    height: 100%;
+    background: var(--primary-color);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+#click-to-start {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: var(--overlay-bg);
+    color: white;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    font-weight: 300;
+    letter-spacing: 1px;
+    cursor: pointer;
+    z-index: 999;
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+    opacity: 1;
+    transition: opacity 1s ease;
+}
+
+#click-to-start.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#click-to-start:hover {
+    background: var(--overlay-bg);
+}
+
+#bio-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 30px;
+    opacity: 0;
+    transition: opacity 1s ease;
+    pointer-events: none;
+}
+
+#bio-container.visible {
+    opacity: 1;
+    pointer-events: none;
+}
+
+.profile-left,
+.content-right {
+    pointer-events: auto;
+}
+
+.profile-left {
+    position: absolute;
+    top: 50%;
+    left: 25%;
+    transform: translateY(-50%);
+    z-index: 15;
+}
+
+.content-right {
+    position: absolute;
+    top: 50%;
+    right: 25%;
+    transform: translateY(-50%);
+    text-align: right;
+    z-index: 15;
+}
+
+.profile-picture-container {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    transition: transform 0.5s ease;
+    animation: float 5s ease-in-out infinite;
+}
+
+.profile-picture-container:hover {
+    transform: scale(1.05);
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+.profile-picture {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--primary-color);
+    box-shadow: 0 0 20px rgba(255, 65, 105, 0.5);
+    transition: all 0.5s ease;
+}
+
+.profile-picture:hover {
+    box-shadow: 0 0 30px rgba(255, 65, 105, 0.7);
+}
+
+.profile-circle {
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    animation: rotate 15s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.whocare {
+    font-size: 18px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 300;
+    color: #ffffff;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.8);
+    animation: fadeInRight 1s ease-out;
+}
+
+.profile-name {
+    font-size: 60px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    color: #ffffff;
+    text-shadow: 0 0 15px rgba(255, 65, 105, 0.6);
+    animation: glow 1.5s ease-in-out infinite alternate, fadeInRight 1.2s ease-out;
+}
+
+@keyframes glow {
+    from {
+        text-shadow: 0 0 5px #fff, 0 0 10px var(--primary-color);
+    }
+    to {
+        text-shadow: 0 0 10px #fff, 0 0 20px var(--primary-color);
+    }
+}
+
+@keyframes fadeInRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.profile-subtitle {
+    font-size: 24px;
+    color: #ffffff;
+    font-weight: 400;
+    margin-bottom: 20px;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.8);
+    animation: fadeInRight 1.4s ease-out;
+}
+
+.divider {
+    width: 60px;
+    height: 2px;
+    background: var(--primary-color);
+    margin: 0 0 20px auto;
+    box-shadow: 0 0 10px rgba(255, 65, 105, 0.5);
+    animation: widthGrow 1.2s ease-out;
+}
+
+@keyframes widthGrow {
+    from {
+        width: 0;
+    }
+    to {
+        width: 60px;
+    }
+}
+
+#heart-position {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.music-controls {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+    pointer-events: auto;
+}
+
+.music-controls:hover {
+    opacity: 1;
+}
+
+.music-toggle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(18, 18, 18, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 18px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.music-toggle:hover {
+    background: var(--primary-color);
+    transform: scale(1.1);
+}
+
+.visualizer-container {
+    width: 80px;
+    height: 30px;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.visualizer-bar {
+    flex: 1;
+    background: var(--primary-color);
+    height: 4px;
+    border-radius: 2px;
+    transition: height 0.1s ease;
+    box-shadow: 0 0 8px rgba(255, 65, 105, 0.5);
+}
+
+.particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+@media (max-width: 1200px) {
+    .profile-left { left: 20%; }
+    .content-right { right: 20%; }
+    .profile-name { font-size: 50px; }
+    .profile-picture-container { width: 180px; height: 180px; }
+    .profile-circle { width: 200px; height: 200px; }
+}
+
+@media (max-width: 992px) {
+    .profile-left { left: 15%; }
+    .content-right { right: 15%; }
+    .profile-name { font-size: 40px; }
+    .profile-subtitle { font-size: 20px; }
+    .whocare { font-size: 16px; }
+    .profile-picture-container { width: 160px; height: 160px; }
+    .profile-circle { width: 180px; height: 180px; }
+}
+
+@media (max-width: 768px) {
+    #bio-container {
+        flex-direction: column;
+        justify-content: center;
+        padding: 15px;
+    }
+    .profile-left {
+        position: absolute;
+        top: 20%;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    .content-right {
+        position: absolute;
+        top: auto;
+        bottom: 20%;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        text-align: center;
+        width: 100%;
+        padding: 0 15px;
+    }
+    .profile-name { font-size: 36px; }
+    .divider { margin: 0 auto 15px; }
+    .profile-picture-container { width: 140px; height: 140px; }
+    .profile-circle { width: 160px; height: 160px; }
+    .music-controls { bottom: 15px; right: 15px; }
+    .music-toggle { width: 35px; height: 35px; }
+}
+
+@media (max-width: 480px) {
+    .profile-name { font-size: 30px; }
+    .profile-subtitle { font-size: 18px; }
+    .whocare { font-size: 14px; }
+    .profile-picture-container { width: 120px; height: 120px; }
+    .profile-circle { width: 140px; height: 140px; }
+    #loading-bar { width: 90%; }
+    #loading-files { width: 90%; }
+    #loading-screen h1 { font-size: 28px; }
+    #loading-status { font-size: 14px; }
+    #loading-files { font-size: 12px; }
+}
+    </style>
+</head>
+<body>
+    <div id="loading-screen">
+        <h1><span class="spinner"></span> Loading...</h1>
+        <div id="loading-status">Preparing files...</div>
+        <div id="loading-files">
+            <div class="loading-file" id="file-fonts">Google Fonts <span>Loading...</span></div>
+            <div class="loading-file" id="file-hdr">HDR Environment <span>Loading...</span></div>
+            <div class="loading-file" id="file-model">3D Model <span>Loading...</span></div>
+            <div class="loading-file" id="file-audio">Audio <span>Loading...</span></div>
+        </div>
+        <div id="loading-bar">
+            <div id="loading-progress"></div>
+        </div>
+    </div>
+    
+    <div id="click-to-start">Click to Next Page</div>
+    
+    <div id="bio-container">
+        <div class="profile-left">
+            <div class="profile-picture-container">
+                <img src="./1.png" alt="Profile" class="profile-picture">
+                <div class="profile-circle"></div>
+            </div>
+        </div>
+        
+        <div class="content-right">
+            <div class="whocare">WHOCARE I'M</div>
+            <div class="profile-name">Unknown.YoukNow</div>
+            <div class="profile-subtitle">This is the work</div>
+            <div class="divider"></div>
+        </div>
+    </div>
+    
+    <div id="heart-position"></div>
+    
+    <div class="music-controls">
+        <div class="music-toggle" id="music-toggle">▶</div>
+        <div class="visualizer-container" id="visualizer">
+            <div class="visualizer-bar"></div>
+            <div class="visualizer-bar"></div>
+            <div class="visualizer-bar"></div>
+            <div class="visualizer-bar"></div>
+            <div class="visualizer-bar"></div>
+        </div>
+    </div>
+    
+    <audio id="music" loop>
+        <source src="./T!NE - แกล้ง (prod. Wavvy) (128 kbps).mp3" type="audio/mpeg">
+    </audio>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.125.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.125.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+
+const loadingScreen = document.getElementById('loading-screen');
+const loadingProgress = document.getElementById('loading-progress');
+const loadingStatus = document.getElementById('loading-status');
+const fileFonts = document.getElementById('file-fonts');
+const fileHdr = document.getElementById('file-hdr');
+const fileModel = document.getElementById('file-model');
+const fileAudio = document.getElementById('file-audio');
+const clickToStart = document.getElementById('click-to-start');
+const bioContainer = document.getElementById('bio-container');
+const musicToggle = document.getElementById('music-toggle');
+const visualizerBars = document.querySelectorAll('.visualizer-bar');
+
+let totalFiles = 4; // Google Fonts, HDR, 3D Model, Audio
+let loadedFiles = 0;
+
+function updateProgress() {
+    loadedFiles++;
+    console.log(`Loaded ${loadedFiles}/${totalFiles}`); // ดีบักเพื่อตรวจสอบ
+    const percent = (loadedFiles / totalFiles) * 100;
+    loadingProgress.style.width = percent + '%';
+    loadingStatus.textContent = `Loading... (${Math.round(percent)}%)`;
+    
+    if (loadedFiles >= totalFiles) {
+        loadingStatus.textContent = 'All Files Loaded!';
+        loadingScreen.style.opacity = '0';
+        setTimeout(() => {
+            loadingScreen.classList.add('hidden');
+            clickToStart.style.display = 'flex';
+        }, 500);
+    }
+}
+
+// Load Google Fonts
+        // NICEDAY https://github.com/NiceDayZc
+loadingStatus.textContent = 'Loading Google Fonts...';
+fileFonts.classList.add('loading');
+fileFonts.querySelector('span').textContent = 'Loading...';
+
+document.fonts.ready.then(() => {
+    console.log('Google Fonts loaded https://github.com/NiceDayZc');
+    fileFonts.querySelector('span').textContent = 'Loaded';
+    fileFonts.classList.remove('loading');
+    updateProgress();
+}).catch((error) => {
+    console.error('Error loading fonts:', error);
+    fileFonts.querySelector('span').textContent = 'Error';
+    fileFonts.classList.remove('loading');
+    updateProgress();
+});
+
+// Three.js Setup
+// NICEDAY https://github.com/NiceDayZc
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 0, 20);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.domElement.style.position = 'absolute';
+renderer.domElement.style.top = '0';
+renderer.domElement.style.left = '0';
+renderer.domElement.style.zIndex = '1';
+document.body.appendChild(renderer.domElement);
+
+// Audio Setup
+const audio = document.getElementById('music');
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+const source = audioContext.createMediaElementSource(audio);
+const analyser = audioContext.createAnalyser();
+analyser.fftSize = 256;
+source.connect(analyser);
+analyser.connect(audioContext.destination);
+const bufferLength = analyser.frequencyBinCount;
+const dataArray = new Uint8Array(bufferLength);
+
+let isPlaying = false;
+musicToggle.addEventListener('click', () => {
+    if (isPlaying) {
+        audio.pause();
+        musicToggle.textContent = '▶';
+    } else {
+        audio.play();
+        musicToggle.textContent = '❚❚';
+    }
+    isPlaying = !isPlaying;
+});
+
+// Background Particles
+function createBackgroundParticles() {
+    const particleCount = 20;
+    for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.classList.add('particle');
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+        const size = Math.random() * 3 + 2;
+        particle.style.left = `${x}px`;
+        particle.style.top = `${y}px`;
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.opacity = Math.random() * 0.5 + 0.3;
+        document.body.appendChild(particle);
+        animateParticle(particle);
+    }
+}
+
+function animateParticle(particle) {
+    const duration = Math.random() * 40 + 20;
+    particle.style.animation = `float ${duration}s linear infinite`;
+    setInterval(() => {
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+        particle.style.left = `${x}px`;
+        particle.style.top = `${y}px`;
+    }, duration * 1000);
+}
+
+createBackgroundParticles();
+
+// Load HDR Environment
+loadingStatus.textContent = 'Loading HDR Environment...';
+fileHdr.classList.add('loading');
+fileHdr.querySelector('span').textContent = 'Loading...';
+new RGBELoader()
+    .load('./cobblestone_street_night_4k.hdr', (texture) => {
+        console.log('HDR loaded https://github.com/NiceDayZc');
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        scene.environment = texture;
+        scene.background = texture;
+        fileHdr.querySelector('span').textContent = 'Loaded';
+        fileHdr.classList.remove('loading');
+        updateProgress();
+    }, undefined, (error) => {
+        console.error('Error loading HDR:', error);
+        fileHdr.querySelector('span').textContent = 'Error';
+        fileHdr.classList.remove('loading');
+        loadingStatus.textContent = 'Error Loading HDR, Continuing...';
+        updateProgress();
+    });
+
+// Load Audio
+        // NICEDAY https://github.com/NiceDayZc
+fileAudio.classList.add('loading');
+fileAudio.querySelector('span').textContent = 'Loading...';
+audio.addEventListener('canplaythrough', () => {
+    console.log('Audio loaded https://github.com/NiceDayZc');
+    fileAudio.querySelector('span').textContent = 'Loaded';
+    fileAudio.classList.remove('loading');
+    updateProgress();
+}, { once: true });
+audio.addEventListener('error', () => {
+    console.error('Error loading audio');
+    fileAudio.querySelector('span').textContent = 'Error';
+    fileAudio.classList.remove('loading');
+    loadingStatus.textContent = 'Error Loading Audio, Continuing...';
+    updateProgress();
+}, { once: true });
+audio.load();
+
+// Scene Lighting
+const ambientLight = new THREE.AmbientLight(0xffcccc, 0.3);
+scene.add(ambientLight);
+
+const directionalLight = new THREE.DirectionalLight(0xff9999, 0.6);
+directionalLight.position.set(5, 5, 5);
+directionalLight.castShadow = true;
+directionalLight.shadow.mapSize.width = 1024;
+directionalLight.shadow.mapSize.height = 1024;
+scene.add(directionalLight);
+
+const pointLight = new THREE.PointLight(0xff4444, 0.8, 100);
+pointLight.position.set(0, 0, 15);
+pointLight.castShadow = true;
+scene.add(pointLight);
+
+// Scene Particles
+function createParticles() {
+    const particleCount = 100;
+    const geometry = new THREE.BufferGeometry();
+    const vertices = [];
+    for (let i = 0; i < particleCount; i++) {
+        const x = (Math.random() - 0.5) * 80;
+        const y = (Math.random() - 0.5) * 80;
+        const z = (Math.random() - 0.5) * 80;
+        vertices.push(x, y, z);
+    }
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    const material = new THREE.PointsMaterial({
+        size: 0.4,
+        color: 0xff4169,
+        transparent: true,
+        opacity: 0.7,
+        sizeAttenuation: true
+    });
+    const particles = new THREE.Points(geometry, material);
+    scene.add(particles);
+    return particles;
+}
+
+const particles = createParticles();
+
+// Load 3D Model
+let heartModel;
+fileModel.classList.add('loading');
+fileModel.querySelector('span').textContent = 'Loading...';
+const loader = new GLTFLoader();
+loader.load(
+    './scene.gltf',
+    (gltf) => {
+        console.log('3D Model loaded https://github.com/NiceDayZc');
+        heartModel = gltf.scene;
+        heartModel.castShadow = true;
+        heartModel.receiveShadow = true;
+        scene.add(heartModel);
+
+        heartModel.scale.set(2, 2, 2);
+
+        heartModel.traverse((child) => {
+            if (child.isMesh && child.material) {
+                child.material.metalness = 0.1;
+                child.material.roughness = 0.6;
+            }
+        });
+
+        const box = new THREE.Box3().setFromObject(heartModel);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        camera.position.z = size.length() * 1.5;
+        camera.lookAt(center);
+
+        heartModel.position.set(0, 0, 0);
+
+        fileModel.querySelector('span').textContent = 'Loaded';
+        fileModel.classList.remove('loading');
+        loadingStatus.textContent = '3D Model Loaded Successfully';
+        updateProgress();
+    },
+    (xhr) => {
+        const percent = (xhr.loaded / xhr.total * 100);
+        loadingStatus.textContent = `Loading 3D Model... (${Math.round(percent)}%)`;
+    },
+    (error) => {
+        console.error('Error loading model:', error);
+        fileModel.querySelector('span').textContent = 'Error';
+        fileModel.classList.remove('loading');
+        loadingStatus.textContent = 'Error Loading Model, Continuing...';
+        updateProgress();
+    }
+);
+
+// Orbit Controls
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.5;
+controls.minDistance = 8;
+controls.maxDistance = 40;
+controls.enablePan = false;
+controls.rotateSpeed = 0.8;
+controls.enableZoom = true;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.3;
+
+let isInteracting = false;
+renderer.domElement.addEventListener('mousedown', () => {
+    isInteracting = true;
+    controls.autoRotate = false;
+});
+renderer.domElement.addEventListener('mousemove', () => {
+    if (isInteracting) {
+        controls.autoRotate = false;
+    }
+});
+renderer.domElement.addEventListener('mouseup', () => {
+    isInteracting = false;
+    setTimeout(() => {
+        if (!isInteracting) {
+            controls.autoRotate = true;
+        }
+    });
+});
+
+// Click to Start
+clickToStart.addEventListener('click', () => {
+    audioContext.resume().then(() => {
+        audio.play();
+        isPlaying = true;
+        musicToggle.textContent = '❚❚';
+        clickToStart.classList.add('hidden');
+        setTimeout(() => {
+            renderer.domElement.style.display = 'block';
+            renderer.domElement.classList.add('visible');
+            bioContainer.style.display = 'flex';
+            bioContainer.classList.add('visible');
+            document.querySelector('.music-controls').style.display = 'flex';
+            controls.enabled = true;
+        }, 500);
+    });
+});
+
+// Heartbeat Animation
+function createHeartbeat() {
+    if (!heartModel) return;
+    analyser.getByteFrequencyData(dataArray);
+    const avg = dataArray.reduce((a, b) => a + b) / bufferLength;
+    const baseScale = 1.4;
+    const pulseScale = avg / 255;
+    const scaleMultiplier = baseScale + pulseScale * 0.8;
+    heartModel.scale.set(scaleMultiplier * 2, scaleMultiplier * 2, scaleMultiplier * 2);
+    pointLight.intensity = 0.8 + pulseScale * 0.5;
+    heartModel.traverse((child) => {
+        if (child.isMesh && child.material) {
+            child.material.emissiveIntensity = 0.8 + pulseScale * 0.8;
+        }
+    });
+    updateVisualizer();
+}
+
+function updateVisualizer() {
+    analyser.getByteFrequencyData(dataArray);
+    visualizerBars.forEach((bar, index) => {
+        const barIndex = Math.floor(index * (bufferLength / visualizerBars.length));
+        const barHeight = (dataArray[barIndex] / 255) * 30;
+        bar.style.height = barHeight + 'px';
+    });
+}
+
+// Animation Loop
+function animate() {
+    requestAnimationFrame(animate);
+    if (heartModel && isPlaying) {
+        createHeartbeat();
+    }
+    if (particles) {
+        particles.rotation.y += 0.0003;
+        particles.rotation.x += 0.0001;
+    }
+    controls.update();
+    renderer.render(scene, camera);
+}
+animate();
+
+// Resize Handler
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    if (window.innerWidth <= 768) {
+        camera.position.z = 25;
+    } else {
+        camera.position.z = 20;
+    }
+});
+
+// Additional Styles
+const style = document.createElement('style');
+style.textContent = `
+@keyframes float {
+    0% { transform: translate(0, 0); }
+    25% { transform: translate(10px, -10px); }
+    50% { transform: translate(20px, -5px); }
+    75% { transform: translate(10px, 10px); }
+    100% { transform: translate(0, 0); }
+}
+`;
+document.head.appendChild(style);
+    </script>
+</body>
+</html>
